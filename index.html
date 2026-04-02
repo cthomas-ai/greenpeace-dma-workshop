@@ -8,1147 +8,1107 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .post-it { 
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        .post-it:hover { 
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .tab-active { border-bottom: 3px solid #006633; color: #006633; }
-        .pulse { animation: pulse 1s infinite; }
+        .tab-active { background-color: #166534; color: white; }
+        .fishbone-category { transition: all 0.2s; }
+        .fishbone-category:hover { transform: scale(1.02); }
+        .cause-item { transition: all 0.2s; }
+        .cause-item:hover { background-color: #f0fdf4; }
+        .timer-warning { animation: pulse 1s infinite; }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-        .solution-selected {
-            border: 3px solid #006633 !important;
-            background: #E8F5E9 !important;
-        }
-        .cause-selected {
-            border: 3px solid #FF6600 !important;
-            background: #FFF3E0 !important;
-        }
-        .fishbone-category {
-            min-height: 200px;
+        .save-indicator {
+            transition: opacity 0.3s;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div id="app"></div>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" class="max-w-6xl mx-auto p-4">
+        
+        <!-- Header avec indicateur de sauvegarde -->
+        <div class="bg-green-700 text-white p-6 rounded-t-xl flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">🎯 Workshop DMA 2025</h1>
+                <p class="text-green-200">Greenpeace Luxembourg - Analyse des causes racines</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="saveIndicator" class="save-indicator text-green-200 text-sm opacity-0">
+                    ✓ Sauvegardé
+                </span>
+                <div class="flex gap-2">
+                    <button onclick="exportData()" class="px-3 py-1 bg-green-600 hover:bg-green-500 rounded text-sm">
+                        📥 Exporter
+                    </button>
+                    <button onclick="document.getElementById('importFile').click()" class="px-3 py-1 bg-green-600 hover:bg-green-500 rounded text-sm">
+                        📤 Importer
+                    </button>
+                    <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="hidden">
+                    <button onclick="resetData()" class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-sm">
+                        🗑️ Réinitialiser
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer global -->
+        <div class="bg-white p-4 border-b flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <span class="font-medium">⏱️ Timer :</span>
+                <span id="timerDisplay" class="text-3xl font-bold text-green-700">00:00</span>
+                <div class="flex gap-2">
+                    <button onclick="setTimer(5)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">5 min</button>
+                    <button onclick="setTimer(10)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">10 min</button>
+                    <button onclick="setTimer(20)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">20 min</button>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="startTimer()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">▶️ Start</button>
+                <button onclick="pauseTimer()" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">⏸️ Pause</button>
+                <button onclick="resetTimer()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">🔄 Reset</button>
+            </div>
+        </div>
+
+        <!-- Navigation principale -->
+        <div class="bg-white border-b">
+            <div class="flex">
+                <button onclick="showSection('analyse')" id="tab-analyse" class="flex-1 px-4 py-3 font-medium tab-active">
+                    1️⃣ Analyse
+                </button>
+                <button onclick="showSection('priorisation')" id="tab-priorisation" class="flex-1 px-4 py-3 font-medium hover:bg-gray-100">
+                    2️⃣ Priorisation
+                </button>
+                <button onclick="showSection('solutions')" id="tab-solutions" class="flex-1 px-4 py-3 font-medium hover:bg-gray-100">
+                    3️⃣ Solutions
+                </button>
+                <button onclick="showSection('plan')" id="tab-plan" class="flex-1 px-4 py-3 font-medium hover:bg-gray-100">
+                    4️⃣ Plan d'action
+                </button>
+            </div>
+        </div>
+
+        <!-- SECTION ANALYSE -->
+        <div id="section-analyse" class="bg-white p-6 rounded-b-xl shadow-md">
+            
+            <!-- Onglets compétences -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button onclick="showCompetence(0)" id="comp-tab-0" class="px-4 py-2 bg-green-700 text-white rounded-lg font-medium">
+                    📊 Gestion de Projet
+                </button>
+                <button onclick="showCompetence(1)" id="comp-tab-1" class="px-4 py-2 bg-gray-200 rounded-lg font-medium hover:bg-gray-300">
+                    📈 Reporting
+                </button>
+                <button onclick="showCompetence(2)" id="comp-tab-2" class="px-4 py-2 bg-gray-200 rounded-lg font-medium hover:bg-gray-300">
+                    💡 Innovation
+                </button>
+                <button onclick="showCompetence(3)" id="comp-tab-3" class="px-4 py-2 bg-gray-200 rounded-lg font-medium hover:bg-gray-300">
+                    👑 Leadership
+                </button>
+                <button onclick="showCompetence(4)" id="comp-tab-4" class="px-4 py-2 bg-gray-200 rounded-lg font-medium hover:bg-gray-300">
+                    📚 Apprentissage
+                </button>
+            </div>
+
+            <!-- Sous-navigation étapes -->
+            <div class="flex gap-2 mb-6 border-b pb-4">
+                <button onclick="showStep('fishbone')" id="step-fishbone" class="px-3 py-1 bg-purple-600 text-white rounded text-sm">
+                    🐟 Fishbone
+                </button>
+                <button onclick="showStep('vote')" id="step-vote" class="px-3 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">
+                    🗳️ Vote
+                </button>
+                <button onclick="showStep('5why')" id="step-5why" class="px-3 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">
+                    🔍 5 Pourquoi
+                </button>
+                <button onclick="showStep('root')" id="step-root" class="px-3 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">
+                    🌱 Cause Racine
+                </button>
+            </div>
+
+            <!-- Contenu dynamique par compétence -->
+            <div id="competence-content">
+                <!-- Fishbone -->
+                <div id="step-content-fishbone" class="space-y-4">
+                    <h3 class="text-lg font-bold text-gray-800">🐟 Diagramme Fishbone - Brainstorm des causes</h3>
+                    <p class="text-gray-600 text-sm">Ajoutez les causes possibles dans chaque catégorie. Utilisez le bouton + pour ajouter.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Personnes -->
+                        <div class="fishbone-category bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                            <h4 class="font-bold text-blue-700 mb-2">🔵 Personnes</h4>
+                            <p class="text-xs text-blue-600 mb-2">Compétences, disponibilité, motivation</p>
+                            <div id="fishbone-personnes" class="space-y-2"></div>
+                            <button onclick="addFishboneItem('personnes')" class="mt-2 px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded text-sm w-full">
+                                + Ajouter une cause
+                            </button>
+                        </div>
+                        
+                        <!-- Processus -->
+                        <div class="fishbone-category bg-green-50 p-4 rounded-lg border-2 border-green-200">
+                            <h4 class="font-bold text-green-700 mb-2">🟢 Processus</h4>
+                            <p class="text-xs text-green-600 mb-2">Méthodes de travail, workflows</p>
+                            <div id="fishbone-processus" class="space-y-2"></div>
+                            <button onclick="addFishboneItem('processus')" class="mt-2 px-3 py-1 bg-green-200 hover:bg-green-300 rounded text-sm w-full">
+                                + Ajouter une cause
+                            </button>
+                        </div>
+                        
+                        <!-- Technologie -->
+                        <div class="fishbone-category bg-purple-50 p-4 rounded-lg border-2 border-purple-200">
+                            <h4 class="font-bold text-purple-700 mb-2">🟣 Technologie</h4>
+                            <p class="text-xs text-purple-600 mb-2">Outils, systèmes, infrastructure</p>
+                            <div id="fishbone-technologie" class="space-y-2"></div>
+                            <button onclick="addFishboneItem('technologie')" class="mt-2 px-3 py-1 bg-purple-200 hover:bg-purple-300 rounded text-sm w-full">
+                                + Ajouter une cause
+                            </button>
+                        </div>
+                        
+                        <!-- Culture -->
+                        <div class="fishbone-category bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
+                            <h4 class="font-bold text-orange-700 mb-2">🟠 Culture / Organisation</h4>
+                            <p class="text-xs text-orange-600 mb-2">Leadership, budget, priorités</p>
+                            <div id="fishbone-culture" class="space-y-2"></div>
+                            <button onclick="addFishboneItem('culture')" class="mt-2 px-3 py-1 bg-orange-200 hover:bg-orange-300 rounded text-sm w-full">
+                                + Ajouter une cause
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vote -->
+                <div id="step-content-vote" class="space-y-4 hidden">
+                    <h3 class="text-lg font-bold text-gray-800">🗳️ Vote - Sélectionnez la cause principale</h3>
+                    <p class="text-gray-600 text-sm">Cliquez sur 👍 pour voter. La cause avec le plus de votes sera analysée avec les 5 Pourquoi.</p>
+                    
+                    <div id="vote-list" class="space-y-2">
+                        <p class="text-gray-500 italic">Ajoutez des causes dans le Fishbone d'abord.</p>
+                    </div>
+                    
+                    <div class="mt-4 p-4 bg-green-50 rounded-lg">
+                        <h4 class="font-bold text-green-700">🏆 Cause gagnante :</h4>
+                        <p id="winning-cause" class="text-green-800 mt-2">Aucun vote pour le moment</p>
+                    </div>
+                </div>
+
+                <!-- 5 Pourquoi -->
+                <div id="step-content-5why" class="space-y-4 hidden">
+                    <h3 class="text-lg font-bold text-gray-800">🔍 Les 5 Pourquoi</h3>
+                    
+                    <div id="selected-cause-display" class="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg mb-4">
+                        <span class="text-sm text-yellow-700">Cause sélectionnée :</span>
+                        <p id="selected-cause-text" class="font-bold text-yellow-800">Sélectionnez une cause gagnante dans l'étape Vote</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <span class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shrink-0">1</span>
+                            <div class="flex-1">
+                                <label class="text-sm font-medium text-gray-700">Pourquoi ?</label>
+                                <textarea id="why-1" onchange="saveData()" class="w-full mt-1 p-2 border rounded-lg" rows="2" placeholder="Première réponse..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-center text-2xl text-gray-400">↓</div>
+                        
+                        <div class="flex items-start gap-3">
+                            <span class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shrink-0">2</span>
+                            <div class="flex-1">
+                                <label class="text-sm font-medium text-gray-700">Pourquoi ?</label>
+                                <textarea id="why-2" onchange="saveData()" class="w-full mt-1 p-2 border rounded-lg" rows="2" placeholder="Deuxième réponse..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-center text-2xl text-gray-400">↓</div>
+                        
+                        <div class="flex items-start gap-3">
+                            <span class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shrink-0">3</span>
+                            <div class="flex-1">
+                                <label class="text-sm font-medium text-gray-700">Pourquoi ?</label>
+                                <textarea id="why-3" onchange="saveData()" class="w-full mt-1 p-2 border rounded-lg" rows="2" placeholder="Troisième réponse..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-center text-2xl text-gray-400">↓</div>
+                        
+                        <div class="flex items-start gap-3">
+                            <span class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shrink-0">4</span>
+                            <div class="flex-1">
+                                <label class="text-sm font-medium text-gray-700">Pourquoi ?</label>
+                                <textarea id="why-4" onchange="saveData()" class="w-full mt-1 p-2 border rounded-lg" rows="2" placeholder="Quatrième réponse..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-center text-2xl text-gray-400">↓</div>
+                        
+                        <div class="flex items-start gap-3">
+                            <span class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shrink-0">5</span>
+                            <div class="flex-1">
+                                <label class="text-sm font-medium text-gray-700">Pourquoi ?</label>
+                                <textarea id="why-5" onchange="saveData()" class="w-full mt-1 p-2 border rounded-lg" rows="2" placeholder="Cinquième réponse - la cause racine !"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cause Racine -->
+                <div id="step-content-root" class="space-y-4 hidden">
+                    <h3 class="text-lg font-bold text-gray-800">🌱 Synthèse - Cause Racine</h3>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <h4 class="font-medium text-gray-700 mb-2">📋 Récapitulatif du parcours :</h4>
+                        <div id="journey-recap" class="text-sm text-gray-600 space-y-1">
+                            <p>Complétez les 5 Pourquoi pour voir le récapitulatif.</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="font-medium text-gray-700">🌱 Cause racine identifiée :</label>
+                        <textarea id="root-cause" onchange="saveData()" class="w-full mt-2 p-3 border-2 border-green-300 rounded-lg" rows="3" placeholder="Formulez la cause racine de manière claire et actionnable..."></textarea>
+                    </div>
+                    
+                    <div class="flex gap-4 mt-4">
+                        <button onclick="addToPriorisation()" class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+                            ✅ Ajouter à la Priorisation
+                        </button>
+                        <button onclick="nextCompetence()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                            ➡️ Compétence suivante
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION PRIORISATION -->
+        <div id="section-priorisation" class="bg-white p-6 rounded-b-xl shadow-md hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📊 Priorisation des Causes Racines</h2>
+            <p class="text-gray-600 mb-4">Notez chaque cause selon son impact et l'effort requis, puis sélectionnez les 3 prioritaires.</p>
+            
+            <div id="priorisation-list" class="space-y-4">
+                <p class="text-gray-500 italic">Ajoutez des causes racines depuis l'étape Analyse.</p>
+            </div>
+            
+            <div class="mt-6 p-4 bg-green-50 rounded-lg">
+                <h3 class="font-bold text-green-700 mb-2">🏆 Top 3 Priorités</h3>
+                <div id="top3-list" class="space-y-2">
+                    <p class="text-gray-500 italic">Sélectionnez 3 causes prioritaires ci-dessus.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION SOLUTIONS -->
+        <div id="section-solutions" class="bg-white p-6 rounded-b-xl shadow-md hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">💡 Brainstorm Solutions</h2>
+            
+            <!-- Onglets pour chaque cause prioritaire -->
+            <div class="flex gap-2 mb-4">
+                <button onclick="showSolutionTab(0)" id="sol-tab-0" class="px-4 py-2 bg-green-700 text-white rounded-lg">Cause 1</button>
+                <button onclick="showSolutionTab(1)" id="sol-tab-1" class="px-4 py-2 bg-gray-200 rounded-lg">Cause 2</button>
+                <button onclick="showSolutionTab(2)" id="sol-tab-2" class="px-4 py-2 bg-gray-200 rounded-lg">Cause 3</button>
+            </div>
+            
+            <div id="solutions-content">
+                <div id="solution-cause-display" class="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg mb-4">
+                    <span class="text-sm text-yellow-700">Cause prioritaire :</span>
+                    <p id="solution-cause-text" class="font-bold text-yellow-800">Sélectionnez des causes prioritaires dans l'étape Priorisation</p>
+                </div>
+                
+                <div id="solutions-list" class="space-y-2 mb-4"></div>
+                
+                <div class="flex gap-2">
+                    <input type="text" id="new-solution" class="flex-1 p-2 border rounded-lg" placeholder="Nouvelle solution...">
+                    <button onclick="addSolution()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">+ Ajouter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION PLAN D'ACTION -->
+        <div id="section-plan" class="bg-white p-6 rounded-b-xl shadow-md hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📋 Plan d'Action</h2>
+            
+            <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <span class="font-medium text-blue-700">📊 Statistiques</span>
+                    <div class="flex gap-4 text-sm">
+                        <span id="stat-total">Total: 0</span>
+                        <span id="stat-assigned">Avec responsable: 0</span>
+                        <span id="stat-deadline">Avec échéance: 0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="action-plan-list" class="space-y-4">
+                <p class="text-gray-500 italic">Les actions seront générées à partir des solutions sélectionnées.</p>
+            </div>
+            
+            <div class="mt-6 flex gap-4">
+                <button onclick="generateActionPlan()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    🔄 Générer depuis les solutions
+                </button>
+                <button onclick="exportActionPlan()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    📥 Exporter en CSV
+                </button>
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        // State management
-        const state = {
-            activeCompetency: 0,
-            activeView: 'analysis',
-            activeAnalysisStep: 'fishbone', // 'fishbone', 'vote', '5why', 'rootcause'
-            activeCategory: 'personnes',
-            activeSolutionTab: 0,
-            newPostIt: '',
-            timer: null,
-            timeLeft: 0,
-            // Data per competency
-            competencyData: {
-                0: { 
-                    fishbone: { personnes: [], processus: [], technologie: [], culture: [] },
-                    selectedCauseForWhys: null, // The cause selected after voting
-                    whys: ['', '', '', '', ''],
-                    rootCause: ''
+        // ========== DATA STRUCTURE ==========
+        const STORAGE_KEY = 'workshop_dma_2025_data';
+        
+        const competenceNames = [
+            'Gestion de Projet',
+            'Reporting', 
+            'Innovation',
+            'Leadership',
+            'Apprentissage'
+        ];
+        
+        let data = {
+            currentCompetence: 0,
+            currentStep: 'fishbone',
+            currentSection: 'analyse',
+            currentSolutionTab: 0,
+            competences: competenceNames.map(name => ({
+                name: name,
+                fishbone: {
+                    personnes: [],
+                    processus: [],
+                    technologie: [],
+                    culture: []
                 },
-                1: { 
-                    fishbone: { personnes: [], processus: [], technologie: [], culture: [] },
-                    selectedCauseForWhys: null,
-                    whys: ['', '', '', '', ''],
-                    rootCause: ''
-                },
-                2: { 
-                    fishbone: { personnes: [], processus: [], technologie: [], culture: [] },
-                    selectedCauseForWhys: null,
-                    whys: ['', '', '', '', ''],
-                    rootCause: ''
-                },
-                3: { 
-                    fishbone: { personnes: [], processus: [], technologie: [], culture: [] },
-                    selectedCauseForWhys: null,
-                    whys: ['', '', '', '', ''],
-                    rootCause: ''
-                },
-                4: { 
-                    fishbone: { personnes: [], processus: [], technologie: [], culture: [] },
-                    selectedCauseForWhys: null,
-                    whys: ['', '', '', '', ''],
-                    rootCause: ''
-                },
-            },
-            priorities: [],
-            selectedRootCauses: [],
-            actions: []
+                votes: {},
+                winningCause: null,
+                whys: ['', '', '', '', ''],
+                rootCause: ''
+            })),
+            priorisation: [],
+            top3: [],
+            solutions: [[], [], []],
+            actionPlan: []
         };
 
-        const competencies = [
-            { name: 'Gestion de Projet', score: '2.57', question: 'Pourquoi les projets digitaux ne sont-ils pas livrés dans les temps et budgets prévus ?' },
-            { name: 'Reporting', score: '2.54', question: 'Pourquoi n\'avons-nous pas les rapports nécessaires pour prendre des décisions éclairées ?' },
-            { name: 'Innovation Digitale', score: '2.68', question: 'Pourquoi n\'expérimentons-nous pas de nouvelles approches digitales ?' },
-            { name: 'Leadership Digital', score: 'Écart FR/Lux', question: 'Pourquoi le leadership digital n\'est-il pas perçu comme présent au Luxembourg ?' },
-            { name: 'Apprentissage', score: '2.41', question: 'Pourquoi les équipes n\'ont-elles pas accès à des formations digitales de qualité ?' },
-        ];
+        // ========== TIMER ==========
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let timerRunning = false;
 
-        const categories = [
-            { id: 'personnes', label: 'Personnes', description: 'Compétences, capacité, motivation, disponibilité', bgColor: 'bg-blue-50', borderColor: 'border-blue-300', headerBg: 'bg-blue-500', textColor: 'text-blue-700', postItColor: 'bg-blue-100' },
-            { id: 'processus', label: 'Processus', description: 'Méthodes de travail, workflows, procédures', bgColor: 'bg-green-50', borderColor: 'border-green-300', headerBg: 'bg-green-500', textColor: 'text-green-700', postItColor: 'bg-green-100' },
-            { id: 'technologie', label: 'Technologie', description: 'Outils, systèmes, infrastructure, données', bgColor: 'bg-purple-50', borderColor: 'border-purple-300', headerBg: 'bg-purple-500', textColor: 'text-purple-700', postItColor: 'bg-purple-100' },
-            { id: 'culture', label: 'Culture / Orga', description: 'Leadership, priorités, budget, valeurs', bgColor: 'bg-orange-50', borderColor: 'border-orange-300', headerBg: 'bg-orange-500', textColor: 'text-orange-700', postItColor: 'bg-orange-100' },
-        ];
-
-        const analysisSteps = [
-            { id: 'fishbone', label: 'Fishbone', icon: '🐟', description: 'Brainstorm des causes' },
-            { id: 'vote', label: 'Vote', icon: '🗳️', description: 'Sélectionner la cause principale' },
-            { id: '5why', label: '5 Pourquoi', icon: '🔍', description: 'Creuser la cause' },
-            { id: 'rootcause', label: 'Cause Racine', icon: '🌱', description: 'Synthèse finale' },
-        ];
-
-        // Utility functions
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            return `${m}:${s.toString().padStart(2, '0')}`;
+        function setTimer(minutes) {
+            timerSeconds = minutes * 60;
+            updateTimerDisplay();
         }
 
-        function startTimer(minutes) {
-            state.timeLeft = minutes * 60;
-            if (state.timer) clearInterval(state.timer);
-            state.timer = setInterval(() => {
-                state.timeLeft--;
-                if (state.timeLeft <= 0) {
-                    clearInterval(state.timer);
-                    state.timeLeft = 0;
-                    // Play sound or alert
-                    try {
-                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkssYFiwcGBwSGhcPDgoJBQAC');
-                        audio.play().catch(() => {});
-                    } catch(e) {}
-                    alert('⏰ Temps écoulé !');
-                }
-                render();
-            }, 1000);
-            render();
+        function startTimer() {
+            if (!timerRunning && timerSeconds > 0) {
+                timerRunning = true;
+                timerInterval = setInterval(() => {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                    if (timerSeconds <= 0) {
+                        pauseTimer();
+                        alert('⏰ Temps écoulé !');
+                    }
+                }, 1000);
+            }
         }
 
-        function stopTimer() {
-            if (state.timer) clearInterval(state.timer);
-            state.timeLeft = 0;
-            render();
+        function pauseTimer() {
+            timerRunning = false;
+            clearInterval(timerInterval);
         }
 
-        // Fishbone functions
-        function addFishboneItem(category) {
-            const input = document.getElementById('fishboneInput');
-            const text = input?.value?.trim();
-            if (!text) return;
+        function resetTimer() {
+            pauseTimer();
+            timerSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            const display = document.getElementById('timerDisplay');
+            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
-            state.competencyData[state.activeCompetency].fishbone[category].push({
-                id: Date.now(),
-                text: text,
-                votes: 0,
-                category: category
+            if (timerSeconds <= 60 && timerSeconds > 0) {
+                display.classList.add('timer-warning', 'text-red-600');
+            } else {
+                display.classList.remove('timer-warning', 'text-red-600');
+            }
+        }
+
+        // ========== NAVIGATION ==========
+        function showSection(section) {
+            data.currentSection = section;
+            ['analyse', 'priorisation', 'solutions', 'plan'].forEach(s => {
+                document.getElementById(`section-${s}`).classList.add('hidden');
+                document.getElementById(`tab-${s}`).classList.remove('tab-active');
             });
-            input.value = '';
-            render();
+            document.getElementById(`section-${section}`).classList.remove('hidden');
+            document.getElementById(`tab-${section}`).classList.add('tab-active');
+            
+            if (section === 'priorisation') renderPriorisation();
+            if (section === 'solutions') renderSolutions();
+            if (section === 'plan') renderActionPlan();
+            
+            saveData();
         }
 
-        function voteFishboneItem(category, itemId) {
-            const item = state.competencyData[state.activeCompetency].fishbone[category].find(i => i.id === itemId);
-            if (item) {
-                item.votes++;
-                render();
+        function showCompetence(index) {
+            data.currentCompetence = index;
+            for (let i = 0; i < 5; i++) {
+                const tab = document.getElementById(`comp-tab-${i}`);
+                if (i === index) {
+                    tab.classList.add('bg-green-700', 'text-white');
+                    tab.classList.remove('bg-gray-200');
+                } else {
+                    tab.classList.remove('bg-green-700', 'text-white');
+                    tab.classList.add('bg-gray-200');
+                }
+            }
+            renderCurrentStep();
+            saveData();
+        }
+
+        function showStep(step) {
+            data.currentStep = step;
+            ['fishbone', 'vote', '5why', 'root'].forEach(s => {
+                document.getElementById(`step-content-${s}`).classList.add('hidden');
+                const btn = document.getElementById(`step-${s}`);
+                btn.classList.remove('bg-purple-600', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            document.getElementById(`step-content-${step}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`step-${step}`);
+            activeBtn.classList.add('bg-purple-600', 'text-white');
+            activeBtn.classList.remove('bg-gray-200');
+            
+            renderCurrentStep();
+            saveData();
+        }
+
+        function nextCompetence() {
+            if (data.currentCompetence < 4) {
+                showCompetence(data.currentCompetence + 1);
+                showStep('fishbone');
+            } else {
+                showSection('priorisation');
             }
         }
 
-        function unvoteFishboneItem(category, itemId) {
-            const item = state.competencyData[state.activeCompetency].fishbone[category].find(i => i.id === itemId);
-            if (item && item.votes > 0) {
-                item.votes--;
-                render();
+        // ========== FISHBONE ==========
+        function addFishboneItem(category) {
+            const text = prompt('Entrez la cause :');
+            if (text && text.trim()) {
+                const id = Date.now().toString();
+                data.competences[data.currentCompetence].fishbone[category].push({
+                    id: id,
+                    text: text.trim()
+                });
+                renderFishbone();
+                saveData();
             }
         }
 
-        function selectCauseForWhys(category, itemId) {
-            const item = state.competencyData[state.activeCompetency].fishbone[category].find(i => i.id === itemId);
-            if (item) {
-                state.competencyData[state.activeCompetency].selectedCauseForWhys = {
-                    ...item,
-                    category: category
-                };
-                state.activeAnalysisStep = '5why';
-                render();
-            }
+        function removeFishboneItem(category, id) {
+            const comp = data.competences[data.currentCompetence];
+            comp.fishbone[category] = comp.fishbone[category].filter(item => item.id !== id);
+            delete comp.votes[id];
+            renderFishbone();
+            saveData();
         }
 
-        function getAllFishboneItems() {
-            const data = state.competencyData[state.activeCompetency].fishbone;
-            const allItems = [];
-            Object.keys(data).forEach(cat => {
-                data[cat].forEach(item => {
-                    allItems.push({ ...item, category: cat });
+        function renderFishbone() {
+            const comp = data.competences[data.currentCompetence];
+            ['personnes', 'processus', 'technologie', 'culture'].forEach(category => {
+                const container = document.getElementById(`fishbone-${category}`);
+                container.innerHTML = comp.fishbone[category].map(item => `
+                    <div class="flex items-center gap-2 bg-white p-2 rounded border">
+                        <span class="flex-1 text-sm">${item.text}</span>
+                        <button onclick="removeFishboneItem('${category}', '${item.id}')" class="text-red-500 hover:text-red-700">✕</button>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // ========== VOTE ==========
+        function renderVote() {
+            const comp = data.competences[data.currentCompetence];
+            const allCauses = [];
+            
+            ['personnes', 'processus', 'technologie', 'culture'].forEach(category => {
+                comp.fishbone[category].forEach(item => {
+                    allCauses.push({ ...item, category });
                 });
             });
-            return allItems.sort((a, b) => b.votes - a.votes);
+            
+            const container = document.getElementById('vote-list');
+            if (allCauses.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic">Ajoutez des causes dans le Fishbone d\'abord.</p>';
+            } else {
+                container.innerHTML = allCauses.map(cause => {
+                    const votes = comp.votes[cause.id] || 0;
+                    return `
+                        <div class="cause-item flex items-center gap-3 p-3 border rounded-lg">
+                            <button onclick="vote('${cause.id}')" class="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 rounded text-lg">
+                                👍 ${votes}
+                            </button>
+                            <span class="flex-1">${cause.text}</span>
+                            <span class="text-xs px-2 py-1 rounded ${getCategoryColor(cause.category)}">${cause.category}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            updateWinningCause();
         }
 
-        // 5 Why functions
-        function updateWhy(index, value) {
-            state.competencyData[state.activeCompetency].whys[index] = value;
+        function vote(causeId) {
+            const comp = data.competences[data.currentCompetence];
+            comp.votes[causeId] = (comp.votes[causeId] || 0) + 1;
+            renderVote();
+            saveData();
         }
 
-        function updateRootCause(value) {
-            state.competencyData[state.activeCompetency].rootCause = value;
+        function updateWinningCause() {
+            const comp = data.competences[data.currentCompetence];
+            let maxVotes = 0;
+            let winner = null;
+            
+            ['personnes', 'processus', 'technologie', 'culture'].forEach(category => {
+                comp.fishbone[category].forEach(item => {
+                    const votes = comp.votes[item.id] || 0;
+                    if (votes > maxVotes) {
+                        maxVotes = votes;
+                        winner = item;
+                    }
+                });
+            });
+            
+            const display = document.getElementById('winning-cause');
+            if (winner && maxVotes > 0) {
+                display.textContent = `${winner.text} (${maxVotes} votes)`;
+                comp.winningCause = winner;
+            } else {
+                display.textContent = 'Aucun vote pour le moment';
+                comp.winningCause = null;
+            }
         }
 
-        function addToPriorities() {
-            const rootCause = state.competencyData[state.activeCompetency].rootCause;
-            if (rootCause && !state.priorities.find(p => p.text === rootCause)) {
-                state.priorities.push({
-                    id: Date.now(),
-                    text: rootCause,
-                    competency: competencies[state.activeCompetency].name,
+        function getCategoryColor(category) {
+            const colors = {
+                personnes: 'bg-blue-100 text-blue-700',
+                processus: 'bg-green-100 text-green-700',
+                technologie: 'bg-purple-100 text-purple-700',
+                culture: 'bg-orange-100 text-orange-700'
+            };
+            return colors[category] || 'bg-gray-100';
+        }
+
+        // ========== 5 WHY ==========
+        function render5Why() {
+            const comp = data.competences[data.currentCompetence];
+            
+            // Display selected cause
+            const causeText = document.getElementById('selected-cause-text');
+            if (comp.winningCause) {
+                causeText.textContent = comp.winningCause.text;
+            } else {
+                causeText.textContent = 'Sélectionnez une cause gagnante dans l\'étape Vote';
+            }
+            
+            // Load why values
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`why-${i}`).value = comp.whys[i - 1] || '';
+            }
+        }
+
+        function saveWhys() {
+            const comp = data.competences[data.currentCompetence];
+            for (let i = 1; i <= 5; i++) {
+                comp.whys[i - 1] = document.getElementById(`why-${i}`).value;
+            }
+        }
+
+        // ========== ROOT CAUSE ==========
+        function renderRootCause() {
+            const comp = data.competences[data.currentCompetence];
+            
+            // Journey recap
+            const recap = document.getElementById('journey-recap');
+            let html = '';
+            if (comp.winningCause) {
+                html += `<p><strong>Cause initiale :</strong> ${comp.winningCause.text}</p>`;
+            }
+            comp.whys.forEach((why, i) => {
+                if (why) {
+                    html += `<p><strong>Pourquoi ${i + 1} :</strong> ${why}</p>`;
+                }
+            });
+            recap.innerHTML = html || '<p>Complétez les 5 Pourquoi pour voir le récapitulatif.</p>';
+            
+            // Root cause textarea
+            document.getElementById('root-cause').value = comp.rootCause || '';
+        }
+
+        function saveRootCause() {
+            const comp = data.competences[data.currentCompetence];
+            comp.rootCause = document.getElementById('root-cause').value;
+        }
+
+        // ========== RENDER CURRENT STEP ==========
+        function renderCurrentStep() {
+            saveWhys();
+            saveRootCause();
+            
+            switch (data.currentStep) {
+                case 'fishbone':
+                    renderFishbone();
+                    break;
+                case 'vote':
+                    renderVote();
+                    break;
+                case '5why':
+                    render5Why();
+                    break;
+                case 'root':
+                    renderRootCause();
+                    break;
+            }
+        }
+
+        // ========== PRIORISATION ==========
+        function addToPriorisation() {
+            const comp = data.competences[data.currentCompetence];
+            const rootCause = document.getElementById('root-cause').value.trim();
+            
+            if (!rootCause) {
+                alert('Veuillez d\'abord formuler la cause racine.');
+                return;
+            }
+            
+            comp.rootCause = rootCause;
+            
+            // Check if already in priorisation
+            const exists = data.priorisation.find(p => p.competenceIndex === data.currentCompetence);
+            if (exists) {
+                exists.rootCause = rootCause;
+            } else {
+                data.priorisation.push({
+                    id: Date.now().toString(),
+                    competenceIndex: data.currentCompetence,
+                    competenceName: comp.name,
+                    rootCause: rootCause,
                     impact: 3,
                     effort: 3,
-                    votes: 0,
-                    selectedForSolutions: false
+                    selected: false
                 });
-                alert('✅ Cause racine ajoutée à la priorisation !');
-                render();
+            }
+            
+            saveData();
+            alert('✅ Cause racine ajoutée à la priorisation !');
+            
+            // Update tab indicator
+            const tab = document.getElementById(`comp-tab-${data.currentCompetence}`);
+            if (!tab.textContent.includes('✅')) {
+                tab.textContent = '✅ ' + tab.textContent;
             }
         }
 
-        // Navigation functions
-        function setView(view) {
-            state.activeView = view;
-            render();
-        }
-
-        function setCompetency(idx) {
-            state.activeCompetency = idx;
-            state.activeAnalysisStep = 'fishbone';
-            render();
-        }
-
-        function setAnalysisStep(step) {
-            state.activeAnalysisStep = step;
-            render();
-        }
-
-        function setCategory(cat) {
-            state.activeCategory = cat;
-            render();
-        }
-
-        function setSolutionTab(idx) {
-            state.activeSolutionTab = idx;
-            render();
-        }
-
-        // Priority functions
-        function updatePriority(id, field, value) {
-            const p = state.priorities.find(p => p.id === id);
-            if (p) p[field] = value;
-            render();
-        }
-
-        function toggleSelectForSolutions(id) {
-            const selectedCount = state.priorities.filter(p => p.selectedForSolutions).length;
-            const p = state.priorities.find(p => p.id === id);
-            if (!p) return;
+        function renderPriorisation() {
+            const container = document.getElementById('priorisation-list');
             
-            if (p.selectedForSolutions) {
-                p.selectedForSolutions = false;
-            } else if (selectedCount < 3) {
-                p.selectedForSolutions = true;
+            if (data.priorisation.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic">Ajoutez des causes racines depuis l\'étape Analyse.</p>';
             } else {
-                alert('⚠️ Maximum 3 causes racines peuvent être sélectionnées.');
-                return;
+                container.innerHTML = data.priorisation.map(item => `
+                    <div class="p-4 border rounded-lg ${item.selected ? 'border-green-500 bg-green-50' : ''}">
+                        <div class="flex items-start gap-4">
+                            <input type="checkbox" ${item.selected ? 'checked' : ''} 
+                                onchange="togglePriority('${item.id}')"
+                                class="mt-1 w-5 h-5">
+                            <div class="flex-1">
+                                <span class="text-xs px-2 py-1 bg-gray-100 rounded">${item.competenceName}</span>
+                                <p class="font-medium mt-1">${item.rootCause}</p>
+                                <div class="flex gap-6 mt-3">
+                                    <div>
+                                        <label class="text-sm text-gray-600">Impact (1-5):</label>
+                                        <input type="range" min="1" max="5" value="${item.impact}" 
+                                            onchange="updateScore('${item.id}', 'impact', this.value)"
+                                            class="w-24">
+                                        <span class="ml-2 font-bold">${item.impact}</span>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-gray-600">Effort (1-5):</label>
+                                        <input type="range" min="1" max="5" value="${item.effort}" 
+                                            onchange="updateScore('${item.id}', 'effort', this.value)"
+                                            class="w-24">
+                                        <span class="ml-2 font-bold">${item.effort}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="removePriority('${item.id}')" class="text-red-500 hover:text-red-700">✕</button>
+                        </div>
+                    </div>
+                `).join('');
             }
-            updateSelectedRootCauses();
-            render();
-        }
-
-        function updateSelectedRootCauses() {
-            const selected = state.priorities.filter(p => p.selectedForSolutions);
-            state.selectedRootCauses = selected.map(p => {
-                const existing = state.selectedRootCauses.find(s => s.id === p.id);
-                return existing || {
-                    id: p.id,
-                    text: p.text,
-                    competency: p.competency,
-                    solutions: []
-                };
-            });
-        }
-
-        // Solution functions
-        function addSolution(rootCauseId) {
-            const input = document.getElementById('newSolutionInput');
-            const text = input?.value?.trim();
-            if (!text) return;
             
-            const rc = state.selectedRootCauses.find(r => r.id === rootCauseId);
-            if (rc) {
-                rc.solutions.push({
-                    id: Date.now(),
+            renderTop3();
+        }
+
+        function togglePriority(id) {
+            const item = data.priorisation.find(p => p.id === id);
+            if (item) {
+                const selectedCount = data.priorisation.filter(p => p.selected).length;
+                if (!item.selected && selectedCount >= 3) {
+                    alert('Vous ne pouvez sélectionner que 3 causes prioritaires.');
+                    renderPriorisation();
+                    return;
+                }
+                item.selected = !item.selected;
+            }
+            updateTop3();
+            renderPriorisation();
+            saveData();
+        }
+
+        function updateScore(id, field, value) {
+            const item = data.priorisation.find(p => p.id === id);
+            if (item) {
+                item[field] = parseInt(value);
+            }
+            renderPriorisation();
+            saveData();
+        }
+
+        function removePriority(id) {
+            data.priorisation = data.priorisation.filter(p => p.id !== id);
+            updateTop3();
+            renderPriorisation();
+            saveData();
+        }
+
+        function updateTop3() {
+            data.top3 = data.priorisation.filter(p => p.selected);
+        }
+
+        function renderTop3() {
+            const container = document.getElementById('top3-list');
+            if (data.top3.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic">Sélectionnez 3 causes prioritaires ci-dessus.</p>';
+            } else {
+                container.innerHTML = data.top3.map((item, i) => `
+                    <div class="flex items-center gap-2 p-2 bg-white rounded border">
+                        <span class="font-bold text-green-700">${i + 1}.</span>
+                        <span class="text-xs px-2 py-1 bg-gray-100 rounded">${item.competenceName}</span>
+                        <span>${item.rootCause}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // ========== SOLUTIONS ==========
+        function showSolutionTab(index) {
+            data.currentSolutionTab = index;
+            for (let i = 0; i < 3; i++) {
+                const tab = document.getElementById(`sol-tab-${i}`);
+                if (i === index) {
+                    tab.classList.add('bg-green-700', 'text-white');
+                    tab.classList.remove('bg-gray-200');
+                } else {
+                    tab.classList.remove('bg-green-700', 'text-white');
+                    tab.classList.add('bg-gray-200');
+                }
+            }
+            renderSolutions();
+            saveData();
+        }
+
+        function renderSolutions() {
+            const causeDisplay = document.getElementById('solution-cause-text');
+            
+            if (data.top3.length > data.currentSolutionTab) {
+                const cause = data.top3[data.currentSolutionTab];
+                causeDisplay.textContent = cause.rootCause;
+                
+                // Update tab labels
+                data.top3.forEach((c, i) => {
+                    const tab = document.getElementById(`sol-tab-${i}`);
+                    tab.textContent = c.competenceName;
+                });
+            } else {
+                causeDisplay.textContent = 'Sélectionnez des causes prioritaires dans l\'étape Priorisation';
+            }
+            
+            // Render solutions list
+            const container = document.getElementById('solutions-list');
+            const solutions = data.solutions[data.currentSolutionTab] || [];
+            
+            if (solutions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic">Aucune solution proposée.</p>';
+            } else {
+                container.innerHTML = solutions.map(sol => `
+                    <div class="flex items-center gap-3 p-3 border rounded-lg ${sol.selected ? 'border-green-500 bg-green-50' : ''}">
+                        <input type="checkbox" ${sol.selected ? 'checked' : ''} 
+                            onchange="toggleSolution(${data.currentSolutionTab}, '${sol.id}')"
+                            class="w-5 h-5">
+                        <span class="flex-1">${sol.text}</span>
+                        <button onclick="removeSolution(${data.currentSolutionTab}, '${sol.id}')" class="text-red-500 hover:text-red-700">✕</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function addSolution() {
+            const input = document.getElementById('new-solution');
+            const text = input.value.trim();
+            
+            if (text) {
+                if (!data.solutions[data.currentSolutionTab]) {
+                    data.solutions[data.currentSolutionTab] = [];
+                }
+                data.solutions[data.currentSolutionTab].push({
+                    id: Date.now().toString(),
                     text: text,
-                    selected: false,
-                    impact: 3,
-                    effort: 3
+                    selected: false
                 });
+                input.value = '';
+                renderSolutions();
+                saveData();
             }
-            input.value = '';
-            render();
         }
 
-        function toggleSolutionSelected(rootCauseId, solutionId) {
-            const rc = state.selectedRootCauses.find(r => r.id === rootCauseId);
-            if (!rc) return;
-            
-            const selectedCount = rc.solutions.filter(s => s.selected).length;
-            const solution = rc.solutions.find(s => s.id === solutionId);
-            if (!solution) return;
-            
-            if (solution.selected) {
-                solution.selected = false;
-            } else if (selectedCount < 3) {
-                solution.selected = true;
-            } else {
-                alert('⚠️ Maximum 3 solutions par cause racine.');
-                return;
+        function toggleSolution(tabIndex, id) {
+            const sol = data.solutions[tabIndex].find(s => s.id === id);
+            if (sol) {
+                sol.selected = !sol.selected;
             }
-            render();
+            renderSolutions();
+            saveData();
         }
 
-        function updateSolution(rootCauseId, solutionId, field, value) {
-            const rc = state.selectedRootCauses.find(r => r.id === rootCauseId);
-            if (!rc) return;
-            const solution = rc.solutions.find(s => s.id === solutionId);
-            if (solution) solution[field] = value;
-            render();
+        function removeSolution(tabIndex, id) {
+            data.solutions[tabIndex] = data.solutions[tabIndex].filter(s => s.id !== id);
+            renderSolutions();
+            saveData();
         }
 
-        function generateActionsFromSolutions() {
-            state.actions = [];
-            state.selectedRootCauses.forEach(rc => {
-                rc.solutions.filter(s => s.selected).forEach(solution => {
-                    state.actions.push({
-                        id: Date.now() + Math.random(),
-                        action: solution.text,
-                        rootCause: rc.text,
-                        competency: rc.competency,
-                        responsable: '',
-                        echeance: '',
-                        ressources: '',
+        // ========== ACTION PLAN ==========
+        function generateActionPlan() {
+            data.actionPlan = [];
+            
+            data.top3.forEach((cause, causeIndex) => {
+                const solutions = data.solutions[causeIndex] || [];
+                solutions.filter(s => s.selected).forEach(sol => {
+                    data.actionPlan.push({
+                        id: Date.now().toString() + Math.random(),
+                        competence: cause.competenceName,
+                        rootCause: cause.rootCause,
+                        action: sol.text,
+                        responsible: '',
+                        deadline: '',
+                        resources: '',
                         status: 'À faire'
                     });
                 });
             });
-            state.activeView = 'actions';
-            render();
+            
+            renderActionPlan();
+            saveData();
         }
 
-        // Action functions
-        function addAction() {
-            state.actions.push({
-                id: Date.now(),
-                action: '',
-                rootCause: '',
-                competency: '',
-                responsable: '',
-                echeance: '',
-                ressources: '',
-                status: 'À faire'
-            });
-            render();
+        function renderActionPlan() {
+            const container = document.getElementById('action-plan-list');
+            
+            if (data.actionPlan.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic">Les actions seront générées à partir des solutions sélectionnées.</p>';
+            } else {
+                // Group by root cause
+                const grouped = {};
+                data.actionPlan.forEach(action => {
+                    if (!grouped[action.rootCause]) {
+                        grouped[action.rootCause] = {
+                            competence: action.competence,
+                            actions: []
+                        };
+                    }
+                    grouped[action.rootCause].actions.push(action);
+                });
+                
+                container.innerHTML = Object.entries(grouped).map(([rootCause, group]) => `
+                    <div class="border rounded-lg overflow-hidden mb-4">
+                        <div class="bg-gray-100 p-3">
+                            <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">${group.competence}</span>
+                            <p class="font-medium mt-1">${rootCause}</p>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            ${group.actions.map(action => `
+                                <div class="grid grid-cols-5 gap-2 p-3 bg-gray-50 rounded">
+                                    <div class="col-span-2">
+                                        <label class="text-xs text-gray-500">Action</label>
+                                        <p class="text-sm font-medium">${action.action}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Responsable</label>
+                                        <input type="text" value="${action.responsible}" 
+                                            onchange="updateAction('${action.id}', 'responsible', this.value)"
+                                            class="w-full p-1 border rounded text-sm" placeholder="Qui ?">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Échéance</label>
+                                        <input type="date" value="${action.deadline}" 
+                                            onchange="updateAction('${action.id}', 'deadline', this.value)"
+                                            class="w-full p-1 border rounded text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Statut</label>
+                                        <select onchange="updateAction('${action.id}', 'status', this.value)"
+                                            class="w-full p-1 border rounded text-sm">
+                                            <option ${action.status === 'À faire' ? 'selected' : ''}>À faire</option>
+                                            <option ${action.status === 'En cours' ? 'selected' : ''}>En cours</option>
+                                            <option ${action.status === 'Terminé' ? 'selected' : ''}>Terminé</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            updateStats();
         }
 
         function updateAction(id, field, value) {
-            const a = state.actions.find(a => a.id === id);
-            if (a) a[field] = value;
+            const action = data.actionPlan.find(a => a.id === id);
+            if (action) {
+                action[field] = value;
+            }
+            saveData();
+            updateStats();
         }
 
-        function deleteAction(id) {
-            state.actions = state.actions.filter(a => a.id !== id);
-            render();
+        function updateStats() {
+            const total = data.actionPlan.length;
+            const assigned = data.actionPlan.filter(a => a.responsible).length;
+            const withDeadline = data.actionPlan.filter(a => a.deadline).length;
+            
+            document.getElementById('stat-total').textContent = `Total: ${total}`;
+            document.getElementById('stat-assigned').textContent = `Avec responsable: ${assigned}`;
+            document.getElementById('stat-deadline').textContent = `Avec échéance: ${withDeadline}`;
         }
 
-        // Render functions
-        function render() {
-            const app = document.getElementById('app');
-            const comp = competencies[state.activeCompetency];
-            const currentData = state.competencyData[state.activeCompetency];
-            const selectedForSolutionsCount = state.priorities.filter(p => p.selectedForSolutions).length;
-
-            app.innerHTML = `
-                <!-- Header -->
-                <div class="bg-green-700 text-white p-4 shadow-lg">
-                    <div class="max-w-7xl mx-auto flex justify-between items-center">
-                        <div>
-                            <h1 class="text-2xl font-bold">Workshop DMA 2025</h1>
-                            <p class="text-green-200">Greenpeace Luxembourg - Analyse des Causes Racines</p>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            ${state.timeLeft > 0 ? `
-                                <div class="text-3xl font-mono font-bold ${state.timeLeft < 60 ? 'text-red-300 pulse' : ''}">
-                                    ${formatTime(state.timeLeft)}
-                                </div>
-                                <button onclick="stopTimer()" class="px-3 py-1 bg-red-600 rounded hover:bg-red-500 text-sm">Stop</button>
-                            ` : ''}
-                            <div class="flex gap-2">
-                                <button onclick="startTimer(5)" class="px-3 py-1 bg-green-600 rounded hover:bg-green-500 text-sm">5 min</button>
-                                <button onclick="startTimer(10)" class="px-3 py-1 bg-green-600 rounded hover:bg-green-500 text-sm">10 min</button>
-                                <button onclick="startTimer(20)" class="px-3 py-1 bg-green-600 rounded hover:bg-green-500 text-sm">20 min</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Main Navigation -->
-                <div class="bg-white border-b shadow-sm">
-                    <div class="max-w-7xl mx-auto flex">
-                        <button onclick="setView('analysis')" class="px-4 py-3 font-medium text-sm ${state.activeView === 'analysis' ? 'tab-active' : 'text-gray-500 hover:text-gray-700'}">
-                            1️⃣ Analyse
-                        </button>
-                        <button onclick="setView('prioritization')" class="px-4 py-3 font-medium text-sm ${state.activeView === 'prioritization' ? 'tab-active' : 'text-gray-500 hover:text-gray-700'}">
-                            2️⃣ Priorisation
-                        </button>
-                        <button onclick="setView('solutions')" class="px-4 py-3 font-medium text-sm ${state.activeView === 'solutions' ? 'tab-active' : 'text-gray-500 hover:text-gray-700'} ${selectedForSolutionsCount === 0 ? 'opacity-50' : ''}">
-                            3️⃣ Solutions ${selectedForSolutionsCount > 0 ? `(${selectedForSolutionsCount}/3)` : ''}
-                        </button>
-                        <button onclick="setView('actions')" class="px-4 py-3 font-medium text-sm ${state.activeView === 'actions' ? 'tab-active' : 'text-gray-500 hover:text-gray-700'}">
-                            4️⃣ Plan d'Action
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Main Content -->
-                <div class="max-w-7xl mx-auto p-6 pb-24">
-                    ${state.activeView === 'analysis' ? renderAnalysis(comp, currentData) : ''}
-                    ${state.activeView === 'prioritization' ? renderPrioritization() : ''}
-                    ${state.activeView === 'solutions' ? renderSolutions() : ''}
-                    ${state.activeView === 'actions' ? renderActions() : ''}
-                </div>
-
-                <!-- Footer -->
-                <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-lg">
-                    <div class="max-w-7xl mx-auto flex justify-between items-center text-sm text-gray-500">
-                        <span>${getFooterTip()}</span>
-                        <span>Greenpeace Luxembourg © 2025</span>
-                    </div>
-                </div>
-            `;
+        function exportActionPlan() {
+            if (data.actionPlan.length === 0) {
+                alert('Aucune action à exporter.');
+                return;
+            }
+            
+            const headers = ['Compétence', 'Cause Racine', 'Action', 'Responsable', 'Échéance', 'Statut'];
+            const rows = data.actionPlan.map(a => [
+                a.competence,
+                a.rootCause,
+                a.action,
+                a.responsible,
+                a.deadline,
+                a.status
+            ]);
+            
+            const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'plan_action_dma_2025.csv';
+            link.click();
         }
 
-        function getFooterTip() {
-            if (state.activeView === 'analysis') {
-                switch(state.activeAnalysisStep) {
-                    case 'fishbone': return '💡 Ajoutez toutes les causes possibles dans les 4 catégories (10 min)';
-                    case 'vote': return '💡 Chaque participant vote pour les causes les plus impactantes (2 min)';
-                    case '5why': return '💡 Creusez la cause sélectionnée avec 5 niveaux de "Pourquoi" (10 min)';
-                    case 'rootcause': return '💡 Synthétisez la cause racine et ajoutez-la à la priorisation';
+        // ========== DATA PERSISTENCE ==========
+        function saveData() {
+            // Save current form values
+            saveWhys();
+            saveRootCause();
+            
+            // Save to localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            
+            // Show save indicator
+            const indicator = document.getElementById('saveIndicator');
+            indicator.style.opacity = '1';
+            setTimeout(() => {
+                indicator.style.opacity = '0';
+            }, 2000);
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    // Merge with default structure to handle any missing fields
+                    data = { ...data, ...parsed };
+                    
+                    // Restore UI state
+                    showSection(data.currentSection);
+                    showCompetence(data.currentCompetence);
+                    showStep(data.currentStep);
+                    
+                    console.log('Data loaded from localStorage');
+                } catch (e) {
+                    console.error('Error loading data:', e);
                 }
             }
-            switch(state.activeView) {
-                case 'prioritization': return '💡 Sélectionnez 3 causes racines prioritaires pour trouver des solutions';
-                case 'solutions': return '💡 Proposez des solutions puis sélectionnez 2-3 solutions par cause';
-                case 'actions': return '💡 Le plan d\'action regroupe toutes les solutions retenues';
-                default: return '';
-            }
         }
 
-        function renderAnalysis(comp, currentData) {
-            const totalFishboneItems = Object.values(currentData.fishbone).reduce((acc, arr) => acc + arr.length, 0);
-            
-            return `
-                <!-- Competency Tabs -->
-                <div class="flex gap-2 mb-4 flex-wrap">
-                    ${competencies.map((c, idx) => {
-                        const hasRootCause = state.competencyData[idx].rootCause;
-                        return `
-                            <button onclick="setCompetency(${idx})" class="px-4 py-2 rounded-lg font-medium transition-all ${
-                                state.activeCompetency === idx
-                                    ? 'bg-green-600 text-white shadow-md'
-                                    : 'bg-white text-gray-600 hover:bg-gray-100 border'
-                            }">
-                                ${hasRootCause ? '✅ ' : ''}${c.name}
-                                <span class="ml-2 text-sm ${state.activeCompetency === idx ? 'text-green-200' : 'text-orange-500'}">
-                                    (${c.score})
-                                </span>
-                            </button>
-                        `;
-                    }).join('')}
-                </div>
-
-                <!-- Question Card -->
-                <div class="bg-orange-50 border-l-4 border-orange-400 p-4 mb-4 rounded-r-lg">
-                    <p class="text-lg font-medium text-orange-800">
-                        🤔 ${comp.question}
-                    </p>
-                </div>
-
-                <!-- Analysis Step Navigation -->
-                <div class="bg-white rounded-xl shadow-md p-4 mb-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex gap-2">
-                            ${analysisSteps.map((step, idx) => {
-                                const isActive = state.activeAnalysisStep === step.id;
-                                const isCompleted = (step.id === 'fishbone' && totalFishboneItems > 0) ||
-                                                   (step.id === 'vote' && currentData.selectedCauseForWhys) ||
-                                                   (step.id === '5why' && currentData.whys.some(w => w)) ||
-                                                   (step.id === 'rootcause' && currentData.rootCause);
-                                return `
-                                    <button onclick="setAnalysisStep('${step.id}')" 
-                                        class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                                            isActive 
-                                                ? 'bg-green-600 text-white' 
-                                                : isCompleted
-                                                    ? 'bg-green-100 text-green-700 border border-green-300'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                        }">
-                                        <span class="text-lg">${step.icon}</span>
-                                        <div class="text-left">
-                                            <div class="font-medium text-sm">${step.label}</div>
-                                        </div>
-                                        ${isCompleted && !isActive ? '<span class="text-green-600">✓</span>' : ''}
-                                    </button>
-                                    ${idx < analysisSteps.length - 1 ? '<span class="text-gray-300">→</span>' : ''}
-                                `;
-                            }).join('')}
-                        </div>
-                        <div class="text-sm text-gray-500">
-                            ${totalFishboneItems} causes identifiées
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step Content -->
-                ${state.activeAnalysisStep === 'fishbone' ? renderFishbone(currentData) : ''}
-                ${state.activeAnalysisStep === 'vote' ? renderVote(currentData) : ''}
-                ${state.activeAnalysisStep === '5why' ? render5Why(currentData) : ''}
-                ${state.activeAnalysisStep === 'rootcause' ? renderRootCause(currentData) : ''}
-            `;
+        function exportData() {
+            saveData();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `workshop_dma_2025_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
         }
 
-        function renderFishbone(currentData) {
-            return `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span class="text-2xl">🐟</span> Diagramme Fishbone - Brainstorm des causes
-                        </h3>
-                        <button onclick="setAnalysisStep('vote')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            Passer au Vote →
-                        </button>
-                    </div>
-
-                    <!-- Add cause input -->
-                    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                        <div class="flex gap-2">
-                            <input type="text" id="fishboneInput"
-                                placeholder="Décrivez une cause possible..."
-                                class="flex-1 p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                onkeypress="if(event.key === 'Enter') addFishboneItem(state.activeCategory)">
-                            <select id="categorySelect" onchange="state.activeCategory = this.value" class="p-3 border-2 border-gray-200 rounded-lg">
-                                ${categories.map(cat => `
-                                    <option value="${cat.id}" ${state.activeCategory === cat.id ? 'selected' : ''}>${cat.label}</option>
-                                `).join('')}
-                            </select>
-                            <button onclick="addFishboneItem(document.getElementById('categorySelect').value)" 
-                                class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                                + Ajouter
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Fishbone Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${categories.map(cat => {
-                            const items = currentData.fishbone[cat.id] || [];
-                            return `
-                                <div class="fishbone-category ${cat.bgColor} ${cat.borderColor} border-2 rounded-xl overflow-hidden">
-                                    <div class="${cat.headerBg} text-white p-3">
-                                        <h4 class="font-bold">${cat.label}</h4>
-                                        <p class="text-xs opacity-80">${cat.description}</p>
-                                    </div>
-                                    <div class="p-3 space-y-2">
-                                        ${items.length === 0 ? `
-                                            <p class="text-gray-400 text-sm italic text-center py-4">
-                                                Cliquez sur "+ Ajouter" pour ajouter des causes
-                                            </p>
-                                        ` : items.map(item => `
-                                            <div class="post-it ${cat.postItColor} p-3 rounded-lg border ${cat.borderColor} shadow-sm">
-                                                <p class="text-sm">${item.text}</p>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderVote(currentData) {
-            const allItems = getAllFishboneItems();
-            
-            if (allItems.length === 0) {
-                return `
-                    <div class="bg-white rounded-xl shadow-md p-12 text-center">
-                        <p class="text-xl text-gray-500 mb-4">⚠️ Aucune cause dans le Fishbone</p>
-                        <p class="text-gray-400 mb-6">Retournez à l'étape Fishbone pour ajouter des causes.</p>
-                        <button onclick="setAnalysisStep('fishbone')" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            ← Retour au Fishbone
-                        </button>
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span class="text-2xl">🗳️</span> Vote - Sélectionner la cause principale
-                        </h3>
-                    </div>
-
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <p class="text-blue-800">
-                            <strong>Instructions :</strong> Chaque participant clique sur 👍 pour voter (max 2-3 votes par personne). 
-                            Ensuite, cliquez sur "Sélectionner" pour la cause la plus votée.
-                        </p>
-                    </div>
-
-                    <div class="space-y-3">
-                        ${allItems.map(item => {
-                            const cat = categories.find(c => c.id === item.category);
-                            const isSelected = currentData.selectedCauseForWhys?.id === item.id;
-                            return `
-                                <div class="flex items-center gap-4 p-4 rounded-lg border-2 ${isSelected ? 'cause-selected' : 'border-gray-200 hover:border-gray-300'} transition-all">
-                                    <div class="flex items-center gap-2">
-                                        <button onclick="voteFishboneItem('${item.category}', ${item.id})"
-                                            class="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold">
-                                            👍 ${item.votes}
-                                        </button>
-                                        ${item.votes > 0 ? `
-                                            <button onclick="unvoteFishboneItem('${item.category}', ${item.id})"
-                                                class="px-2 py-1 text-gray-400 hover:text-red-500 text-sm">
-                                                -1
-                                            </button>
-                                        ` : ''}
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="font-medium">${item.text}</p>
-                                        <span class="text-xs px-2 py-1 ${cat.bgColor} ${cat.textColor} rounded">${cat.label}</span>
-                                    </div>
-                                    <button onclick="selectCauseForWhys('${item.category}', ${item.id})"
-                                        class="px-4 py-2 ${isSelected ? 'bg-orange-600' : 'bg-green-600'} text-white rounded-lg hover:opacity-90 font-medium">
-                                        ${isSelected ? '✓ Sélectionnée' : 'Sélectionner →'}
-                                    </button>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function render5Why(currentData) {
-            const selectedCause = currentData.selectedCauseForWhys;
-            
-            if (!selectedCause) {
-                return `
-                    <div class="bg-white rounded-xl shadow-md p-12 text-center">
-                        <p class="text-xl text-gray-500 mb-4">⚠️ Aucune cause sélectionnée</p>
-                        <p class="text-gray-400 mb-6">Retournez à l'étape Vote pour sélectionner une cause à analyser.</p>
-                        <button onclick="setAnalysisStep('vote')" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            ← Retour au Vote
-                        </button>
-                    </div>
-                `;
-            }
-
-            const cat = categories.find(c => c.id === selectedCause.category);
-
-            return `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span class="text-2xl">🔍</span> Les 5 Pourquoi
-                        </h3>
-                        <button onclick="setAnalysisStep('rootcause')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            Synthèse →
-                        </button>
-                    </div>
-
-                    <!-- Selected cause -->
-                    <div class="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r-lg">
-                        <p class="text-sm text-orange-600 font-medium mb-1">Cause sélectionnée (${cat.label})</p>
-                        <p class="text-lg font-medium text-orange-800">🎯 ${selectedCause.text}</p>
-                    </div>
-
-                    <!-- 5 Whys -->
-                    <div class="space-y-4">
-                        ${[1, 2, 3, 4, 5].map((num, idx) => `
-                            <div class="flex gap-4 items-start">
-                                <div class="w-32 flex-shrink-0 pt-3">
-                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full ${idx === 4 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'} font-bold text-sm">
-                                        ${num}
-                                    </span>
-                                    <span class="ml-2 font-medium ${idx === 4 ? 'text-green-700' : 'text-gray-600'}">
-                                        ${idx === 4 ? '🎯 ' : ''}Pourquoi ?
-                                    </span>
-                                </div>
-                                <div class="flex-1">
-                                    <textarea 
-                                        onchange="updateWhy(${idx}, this.value)"
-                                        placeholder="${idx === 0 ? `Pourquoi "${selectedCause.text.substring(0, 50)}..." ?` : 'Pourquoi ?'}"
-                                        class="w-full p-3 border-2 ${idx === 4 ? 'border-green-300 bg-green-50' : 'border-gray-200'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        rows="2">${currentData.whys[idx] || ''}</textarea>
-                                </div>
-                            </div>
-                            ${idx < 4 ? '<div class="flex justify-center"><span class="text-gray-300 text-2xl">↓</span></div>' : ''}
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderRootCause(currentData) {
-            const selectedCause = currentData.selectedCauseForWhys;
-            const lastWhy = currentData.whys[4] || currentData.whys.filter(w => w).pop() || '';
-
-            return `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <span class="text-2xl">🌱</span> Synthèse - Cause Racine
-                    </h3>
-
-                    <!-- Journey recap -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                        <h4 class="font-medium text-gray-700 mb-3">Parcours d'analyse :</h4>
-                        <div class="flex items-center gap-2 text-sm flex-wrap">
-                            <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full">
-                                ${selectedCause?.text?.substring(0, 30) || 'Cause initiale'}...
-                            </span>
-                            <span>→</span>
-                            ${currentData.whys.filter(w => w).map((w, idx) => `
-                                <span class="px-3 py-1 ${idx === currentData.whys.filter(w => w).length - 1 ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'} rounded-full">
-                                    ${w.substring(0, 25)}...
-                                </span>
-                                ${idx < currentData.whys.filter(w => w).length - 1 ? '<span>→</span>' : ''}
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <!-- Root cause input -->
-                    <div class="p-6 bg-green-50 rounded-xl border-2 border-green-400">
-                        <label class="block text-lg font-bold text-green-800 mb-3">
-                            🌱 CAUSE RACINE IDENTIFIÉE
-                        </label>
-                        <p class="text-sm text-green-600 mb-3">
-                            Synthétisez en une phrase la cause fondamentale identifiée grâce aux 5 Pourquoi.
-                        </p>
-                        <textarea 
-                            onchange="updateRootCause(this.value)"
-                            placeholder="Ex: Absence de référentiel de compétences digitales permettant d'identifier les gaps et de justifier un budget formation"
-                            class="w-full p-4 border-2 border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 text-lg"
-                            rows="3">${currentData.rootCause || ''}</textarea>
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        data = { ...data, ...imported };
+                        saveData();
                         
-                        <div class="mt-4 flex justify-between items-center">
-                            <p class="text-sm text-green-600">
-                                ${currentData.rootCause ? '✓ Cause racine définie' : 'Rédigez la cause racine ci-dessus'}
-                            </p>
-                            <button onclick="addToPriorities()" 
-                                class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium ${!currentData.rootCause ? 'opacity-50 cursor-not-allowed' : ''}"
-                                ${!currentData.rootCause ? 'disabled' : ''}>
-                                ✅ Ajouter à la Priorisation
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Next competency -->
-                    ${state.activeCompetency < 4 ? `
-                        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 flex justify-between items-center">
-                            <p class="text-blue-800">
-                                <strong>Prochaine compétence :</strong> ${competencies[state.activeCompetency + 1].name}
-                            </p>
-                            <button onclick="setCompetency(${state.activeCompetency + 1})" 
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-                                Analyser →
-                            </button>
-                        </div>
-                    ` : `
-                        <div class="mt-6 p-4 bg-green-100 rounded-lg border border-green-300 flex justify-between items-center">
-                            <p class="text-green-800">
-                                <strong>🎉 Toutes les compétences analysées !</strong> Passez à la priorisation.
-                            </p>
-                            <button onclick="setView('prioritization')" 
-                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                                Priorisation →
-                            </button>
-                        </div>
-                    `}
-                </div>
-            `;
-        }
-
-        function renderPrioritization() {
-            const sorted = [...state.priorities].sort((a, b) => (b.impact - b.effort + b.votes * 2) - (a.impact - a.effort + a.votes * 2));
-            const selectedCount = state.priorities.filter(p => p.selectedForSolutions).length;
-            
-            return `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span class="text-2xl">🎯</span> Priorisation des Causes Racines
-                        </h3>
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm ${selectedCount === 3 ? 'text-green-600 font-bold' : 'text-gray-500'}">
-                                ${selectedCount}/3 sélectionnées
-                            </span>
-                            ${selectedCount > 0 ? `
-                                <button onclick="setView('solutions')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                                    Trouver des Solutions →
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    ${state.priorities.length === 0 ? `
-                        <div class="text-center py-12 text-gray-500">
-                            <p class="text-lg">Aucune cause racine identifiée.</p>
-                            <p class="text-sm mt-2">Retournez dans l'Analyse pour compléter les 5 Pourquoi de chaque compétence.</p>
-                            <button onclick="setView('analysis')" class="mt-4 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
-                                ← Retour à l'Analyse
-                            </button>
-                        </div>
-                    ` : `
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead>
-                                    <tr class="bg-green-700 text-white">
-                                        <th class="p-3 text-center rounded-tl-lg w-16">Top 3</th>
-                                        <th class="p-3 text-left">Cause Racine</th>
-                                        <th class="p-3 text-center">Compétence</th>
-                                        <th class="p-3 text-center">Impact</th>
-                                        <th class="p-3 text-center">Effort</th>
-                                        <th class="p-3 text-center">Votes</th>
-                                        <th class="p-3 text-center rounded-tr-lg">Priorité</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${sorted.map((p, idx) => {
-                                        let priority = 'À évaluer';
-                                        let prioColor = 'bg-gray-100';
-                                        if (p.impact >= 4 && p.effort <= 2) { priority = '🚀 Quick Win'; prioColor = 'bg-green-100 text-green-800'; }
-                                        else if (p.impact >= 4 && p.effort >= 4) { priority = '📋 Stratégique'; prioColor = 'bg-orange-100 text-orange-800'; }
-                                        else if (p.impact <= 2 && p.effort >= 4) { priority = '⏸️ À éviter'; prioColor = 'bg-red-100 text-red-800'; }
-                                        
-                                        return `
-                                            <tr class="${p.selectedForSolutions ? 'bg-green-50 border-l-4 border-green-500' : idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
-                                                <td class="p-3 text-center">
-                                                    <button onclick="toggleSelectForSolutions(${p.id})" 
-                                                        class="w-8 h-8 rounded-full border-2 flex items-center justify-center mx-auto ${p.selectedForSolutions ? 'bg-green-600 border-green-600 text-white' : 'border-gray-300 hover:border-green-500'}">
-                                                        ${p.selectedForSolutions ? '✓' : ''}
-                                                    </button>
-                                                </td>
-                                                <td class="p-3 font-medium">${p.text}</td>
-                                                <td class="p-3 text-center text-sm text-gray-600">${p.competency}</td>
-                                                <td class="p-3 text-center">
-                                                    <input type="range" min="1" max="5" value="${p.impact}" 
-                                                        onchange="updatePriority(${p.id}, 'impact', parseInt(this.value))" class="w-16">
-                                                    <span class="ml-1 font-bold text-green-600">${p.impact}</span>
-                                                </td>
-                                                <td class="p-3 text-center">
-                                                    <input type="range" min="1" max="5" value="${p.effort}"
-                                                        onchange="updatePriority(${p.id}, 'effort', parseInt(this.value))" class="w-16">
-                                                    <span class="ml-1 font-bold text-orange-600">${p.effort}</span>
-                                                </td>
-                                                <td class="p-3 text-center">
-                                                    <button onclick="updatePriority(${p.id}, 'votes', ${p.votes + 1})"
-                                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 font-bold text-sm">
-                                                        ${p.votes} 👍
-                                                    </button>
-                                                </td>
-                                                <td class="p-3 text-center">
-                                                    <span class="px-2 py-1 rounded text-xs font-medium ${prioColor}">${priority}</span>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <p class="text-blue-800 text-sm">
-                                <strong>📌 Instructions :</strong> Cochez les 3 causes racines prioritaires sur lesquelles vous souhaitez brainstormer des solutions.
-                            </p>
-                        </div>
-                    `}
-                </div>
-            `;
-        }
-
-        function renderSolutions() {
-            if (state.selectedRootCauses.length === 0) {
-                return `
-                    <div class="bg-white rounded-xl shadow-md p-12 text-center">
-                        <p class="text-xl text-gray-500 mb-4">⚠️ Aucune cause racine sélectionnée</p>
-                        <p class="text-gray-400 mb-6">Retournez à la Priorisation pour sélectionner 1 à 3 causes.</p>
-                        <button onclick="setView('prioritization')" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            ← Retour à la Priorisation
-                        </button>
-                    </div>
-                `;
+                        // Refresh UI
+                        showSection(data.currentSection);
+                        showCompetence(data.currentCompetence);
+                        showStep(data.currentStep);
+                        
+                        alert('✅ Données importées avec succès !');
+                    } catch (err) {
+                        alert('❌ Erreur lors de l\'importation : fichier invalide.');
+                    }
+                };
+                reader.readAsText(file);
             }
+            event.target.value = ''; // Reset file input
+        }
 
-            const currentRC = state.selectedRootCauses[state.activeSolutionTab];
-            if (!currentRC) {
-                state.activeSolutionTab = 0;
-                return renderSolutions();
+        function resetData() {
+            if (confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser toutes les données ? Cette action est irréversible.')) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
             }
-
-            const selectedSolutionsCount = currentRC.solutions.filter(s => s.selected).length;
-            const totalSelectedSolutions = state.selectedRootCauses.reduce((acc, rc) => acc + rc.solutions.filter(s => s.selected).length, 0);
-
-            return `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span class="text-2xl">💡</span> Brainstorm Solutions
-                        </h3>
-                        ${totalSelectedSolutions > 0 ? `
-                            <button onclick="generateActionsFromSolutions()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                                Créer le Plan d'Action (${totalSelectedSolutions} solutions) →
-                            </button>
-                        ` : ''}
-                    </div>
-
-                    <!-- Root Cause Tabs -->
-                    <div class="flex gap-2 mb-6">
-                        ${state.selectedRootCauses.map((rc, idx) => {
-                            const rcSelectedCount = rc.solutions.filter(s => s.selected).length;
-                            return `
-                                <button onclick="setSolutionTab(${idx})" 
-                                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all text-left ${
-                                        state.activeSolutionTab === idx
-                                            ? 'bg-green-600 text-white'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }">
-                                    <span class="text-xs block opacity-75">Cause ${idx + 1} - ${rc.competency}</span>
-                                    <span class="text-sm block mt-1">${rc.text.substring(0, 40)}${rc.text.length > 40 ? '...' : ''}</span>
-                                    ${rcSelectedCount > 0 ? `<span class="inline-block mt-2 px-2 py-0.5 ${state.activeSolutionTab === idx ? 'bg-white text-green-600' : 'bg-green-100 text-green-600'} rounded-full text-xs">${rcSelectedCount} retenue(s)</span>` : ''}
-                                </button>
-                            `;
-                        }).join('')}
-                    </div>
-
-                    <!-- Current Root Cause -->
-                    <div class="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r-lg">
-                        <p class="text-sm text-orange-600 font-medium">${currentRC.competency}</p>
-                        <p class="text-lg font-medium text-orange-800 mt-1">🎯 ${currentRC.text}</p>
-                    </div>
-
-                    <!-- Add Solution -->
-                    <div class="mb-6 flex gap-2">
-                        <input type="text" id="newSolutionInput"
-                            placeholder="Proposer une solution pour cette cause..."
-                            onkeypress="if(event.key === 'Enter') addSolution(${currentRC.id})"
-                            class="flex-1 p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <button onclick="addSolution(${currentRC.id})" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            + Ajouter
-                        </button>
-                    </div>
-
-                    <!-- Solutions List -->
-                    ${currentRC.solutions.length === 0 ? `
-                        <div class="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
-                            <p>Aucune solution proposée.</p>
-                            <p class="text-sm mt-1">Brainstormez des solutions ci-dessus.</p>
-                        </div>
-                    ` : `
-                        <div class="space-y-3">
-                            <p class="text-sm text-gray-500 mb-2">
-                                <strong>${selectedSolutionsCount}/3</strong> solutions retenues. Cliquez pour sélectionner/désélectionner.
-                            </p>
-                            ${currentRC.solutions.map(s => `
-                                <div class="p-4 border-2 rounded-lg cursor-pointer transition-all ${s.selected ? 'solution-selected' : 'border-gray-200 hover:border-gray-300'}"
-                                    onclick="toggleSolutionSelected(${currentRC.id}, ${s.id})">
-                                    <div class="flex items-start gap-4">
-                                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${s.selected ? 'bg-green-600 border-green-600 text-white' : 'border-gray-300'}">
-                                            ${s.selected ? '✓' : ''}
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="font-medium ${s.selected ? 'text-green-800' : 'text-gray-800'}">${s.text}</p>
-                                            <div class="flex gap-6 mt-3">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-xs text-gray-500">Impact:</span>
-                                                    <input type="range" min="1" max="5" value="${s.impact}" 
-                                                        onclick="event.stopPropagation()"
-                                                        onchange="updateSolution(${currentRC.id}, ${s.id}, 'impact', parseInt(this.value))" class="w-20">
-                                                    <span class="font-bold text-green-600 text-sm">${s.impact}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-xs text-gray-500">Effort:</span>
-                                                    <input type="range" min="1" max="5" value="${s.effort}"
-                                                        onclick="event.stopPropagation()"
-                                                        onchange="updateSolution(${currentRC.id}, ${s.id}, 'effort', parseInt(this.value))" class="w-20">
-                                                    <span class="font-bold text-orange-600 text-sm">${s.effort}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `}
-
-                    <!-- Summary -->
-                    <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-                        <h4 class="font-bold text-gray-700 mb-3">📊 Résumé des solutions retenues :</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-${state.selectedRootCauses.length} gap-4">
-                            ${state.selectedRootCauses.map((rc, idx) => {
-                                const selected = rc.solutions.filter(s => s.selected);
-                                return `
-                                    <div class="p-3 bg-white rounded border ${idx === state.activeSolutionTab ? 'border-green-400 ring-2 ring-green-200' : 'border-gray-200'}">
-                                        <p class="text-xs text-gray-500 mb-1">${rc.competency}</p>
-                                        <p class="font-medium text-sm mb-2 truncate" title="${rc.text}">${rc.text}</p>
-                                        ${selected.length > 0 ? `
-                                            <ul class="text-xs text-green-700 space-y-1">
-                                                ${selected.map(s => `<li class="truncate" title="${s.text}">✓ ${s.text}</li>`).join('')}
-                                            </ul>
-                                        ` : `
-                                            <p class="text-xs text-gray-400 italic">Aucune solution retenue</p>
-                                        `}
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
         }
 
-        function renderActions() {
-            const groupedActions = {};
-            state.actions.forEach(a => {
-                const key = a.rootCause || 'Autres';
-                if (!groupedActions[key]) groupedActions[key] = { competency: a.competency, actions: [] };
-                groupedActions[key].actions.push(a);
-            });
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            renderCurrentStep();
+        });
 
-            return `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span class="text-2xl">✅</span> Plan d'Action
-                        </h3>
-                        <button onclick="addAction()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            + Ajouter une action
-                        </button>
-                    </div>
-
-                    ${state.actions.length === 0 ? `
-                        <div class="text-center py-12 text-gray-500">
-                            <p class="text-lg">Aucune action définie.</p>
-                            <p class="text-sm mt-2">Retournez à l'étape Solutions ou ajoutez une action manuellement.</p>
-                        </div>
-                    ` : `
-                        ${Object.keys(groupedActions).map(rootCause => `
-                            <div class="mb-8">
-                                <div class="flex items-center gap-2 mb-4 pb-2 border-b-2 border-green-200">
-                                    <span class="text-lg">🎯</span>
-                                    <div>
-                                        <span class="text-xs text-gray-500">${groupedActions[rootCause].competency || ''}</span>
-                                        <h4 class="font-bold text-green-800">${rootCause}</h4>
-                                    </div>
-                                </div>
-                                <div class="space-y-3">
-                                    ${groupedActions[rootCause].actions.map(action => `
-                                        <div class="p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors bg-white">
-                                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                                <div class="md:col-span-4">
-                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Solution / Action</label>
-                                                    <input type="text" value="${action.action}"
-                                                        onchange="updateAction(${action.id}, 'action', this.value)"
-                                                        placeholder="Décrire l'action..."
-                                                        class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 text-sm">
-                                                </div>
-                                                <div class="md:col-span-2">
-                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Responsable</label>
-                                                    <input type="text" value="${action.responsable}"
-                                                        onchange="updateAction(${action.id}, 'responsable', this.value)"
-                                                        placeholder="Qui ?"
-                                                        class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 text-sm">
-                                                </div>
-                                                <div class="md:col-span-2">
-                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Échéance</label>
-                                                    <input type="date" value="${action.echeance}"
-                                                        onchange="updateAction(${action.id}, 'echeance', this.value)"
-                                                        class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 text-sm">
-                                                </div>
-                                                <div class="md:col-span-2">
-                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Ressources</label>
-                                                    <input type="text" value="${action.ressources || ''}"
-                                                        onchange="updateAction(${action.id}, 'ressources', this.value)"
-                                                        placeholder="Budget, outils..."
-                                                        class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 text-sm">
-                                                </div>
-                                                <div class="md:col-span-2 flex items-end gap-2">
-                                                    <select onchange="updateAction(${action.id}, 'status', this.value); render();"
-                                                        class="flex-1 p-2 border rounded text-sm ${
-                                                            action.status === 'Terminé' ? 'bg-green-100 text-green-800' : 
-                                                            action.status === 'En cours' ? 'bg-blue-100 text-blue-800' : 
-                                                            'bg-gray-100'
-                                                        }">
-                                                        <option value="À faire" ${action.status === 'À faire' ? 'selected' : ''}>À faire</option>
-                                                        <option value="En cours" ${action.status === 'En cours' ? 'selected' : ''}>En cours</option>
-                                                        <option value="Terminé" ${action.status === 'Terminé' ? 'selected' : ''}>Terminé</option>
-                                                    </select>
-                                                    <button onclick="deleteAction(${action.id})" class="p-2 text-red-500 hover:bg-red-50 rounded" title="Supprimer">
-                                                        🗑️
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-
-                        <div class="mt-8 p-4 bg-green-50 rounded-lg border border-green-200">
-                            <h4 class="font-bold text-green-800 mb-2">📋 Résumé pour la stratégie DX</h4>
-                            <div class="grid grid-cols-3 gap-4 text-sm">
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="text-2xl font-bold text-green-600">${state.actions.length}</div>
-                                    <div class="text-gray-500">Actions</div>
-                                </div>
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="text-2xl font-bold text-blue-600">${state.actions.filter(a => a.responsable).length}</div>
-                                    <div class="text-gray-500">Avec responsable</div>
-                                </div>
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="text-2xl font-bold text-orange-600">${state.actions.filter(a => a.echeance).length}</div>
-                                    <div class="text-gray-500">Avec échéance</div>
-                                </div>
-                            </div>
-                        </div>
-                    `}
-                </div>
-            `;
-        }
-
-        // Initial render
-        render();
+        // Auto-save on input changes
+        document.addEventListener('input', function(e) {
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+                saveData();
+            }
+        });
     </script>
 </body>
 </html>
